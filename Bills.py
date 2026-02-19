@@ -76,10 +76,9 @@ async def crawl_acts_urls():
 
             title = await detail_page.locator("h1").first.inner_text()
             last_revision_date = await detail_page.locator(".card-header h5.mb-0").first.inner_text()
-            last_revision_date = datetime.strptime(last_revision_date, "%d %B %Y").strftime("%Y-%m-%d")
 
             print("Year:", get_year_from_url(full_url))
-            print("Last Revision Date:", last_revision_date)
+            print("Last Revision Date:", last_revision_date.split("\n")[1].strip())
             print("Title:", title)
             print("URL:", full_url)
             print("PDF Source:", full_url+ "/source")
