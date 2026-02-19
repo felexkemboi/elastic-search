@@ -5,43 +5,22 @@ from elasticsearch import Elasticsearch
 from playwright.async_api import async_playwright
 es = Elasticsearch("http://localhost:9200")
 
-# # Check connection
-# if es.ping():
-#     print("Connected to Elasticsearch!")
-# else:
-#     print("Could not connect to Elasticsearch")
+# Check connection
+if es.ping():
+    print("Connected to Elasticsearch!")
+else:
+    print("Could not connect to Elasticsearch")
 
-# # Example data to index
-# doc = {
-#     "title": "My first document",
-#     "content": "This is some text",
-#     "timestamp": "2026-02-18"
-# }
+# Example data to index
+doc = {
+    "title": "My first document",
+    "content": "This is some text",
+    "timestamp": "2026-02-18"
+}
 
-# # Index the document into "my-index"
-# res = es.index(index="my-index", document=doc)
+# Index the document into "my-index"
+res = es.index(index="my-index", document=doc)
 
-# print(res)
-
-# print("Document indexed:", res['result'])
-
-
-# async def crawl_bills_urls():
-#     async with async_playwright() as p:
-
-#         bills_browser = await p.chromium.launch(headless=True)
-
-#         page = await bills_browser.new_page()
-
-#         await page.goto("https://new.kenyalaw.org/bills/")
-
-#         links = await page.locator("td.cell-title > a").all()
-
-#         for link in links[:30]:
-#             href = await link.get_attribute("href")
-#             print('https://new.kenyalaw.org' + href)
-
-#         await bills_browser.close()
 
 def get_year_from_url(url: str) -> str:
     """
@@ -63,7 +42,7 @@ async def crawl_acts_urls():
 
         links = await page.locator("td.cell-title > a").all()
 
-        for link in links[:30]:
+        for link in links[:100]:
             href = await link.get_attribute("href")
 
             full_url = 'https://new.kenyalaw.org' + href
@@ -76,13 +55,21 @@ async def crawl_acts_urls():
 
             title = await detail_page.locator("h1").first.inner_text()
             last_revision_date = await detail_page.locator(".card-header h5.mb-0").first.inner_text()
+            fulltext = await detail_page.locator(".content-and-enrichments__inner").first.inner_text()
 
-            print("Year:", get_year_from_url(full_url))
-            print("Last Revision Date:", last_revision_date.split("\n")[1].strip())
-            print("Title:", title)
-            print("URL:", full_url)
-            print("PDF Source:", full_url+ "/source")
+            doc = {
+                "title": title,
+                "year": get_year_from_url(full_url) or "Unknown",
+                "last_revision_date": last_revision_date.split("\n")[1].strip(),
+                "url": full_url,
+                "pdf_source": full_url + "/source",
+                "full_text": fulltext,
+                "full_text_length": len(fulltext),
+            }
 
+
+            print(doc)
+            print("")
             print("")
 
             await detail_page.close()
