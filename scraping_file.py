@@ -61,7 +61,7 @@ async def crawl_acts():
 
             doc = {
                 "title": title,
-                "year": get_year_from_url(full_url) or "Unknown",
+                "year": get_year_from_url(full_url) or "2026",
                 "last_revision_date": last_revision_date.split("\n")[1].strip(),
                 "url": full_url,
                 "pdf_source": full_url + "/source",
@@ -76,10 +76,9 @@ async def crawl_acts():
 
             es.index(index="my-index", document=doc)
 
-            download_pdf(doc['pdf_source'], f"{doc['title'].replace(' ', '_')}.pdf")
-
-
             await detail_page.close()
+
+            download_pdf(doc['pdf_source'], f"{doc['title'].replace(' ', '_')}.pdf")
 
         await bills_browser.close()
 
