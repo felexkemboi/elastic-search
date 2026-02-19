@@ -5,3 +5,5 @@ source venv/bin/activate to activate venv
 deactivate - to deactivate
 
 pip install elasticsearch install elastic search
+
+http://localhost:9200/my-index/_search?pretty to see the documents

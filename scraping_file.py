@@ -1,37 +1,39 @@
 import asyncio
 from datetime import datetime
 import re
+import requests
+import os
 from elasticsearch import Elasticsearch
 from playwright.async_api import async_playwright
 es = Elasticsearch("http://localhost:9200")
 
-# Check connection
-if es.ping():
-    print("Connected to Elasticsearch!")
-else:
-    print("Could not connect to Elasticsearch")
 
-# Example data to index
-doc = {
-    "title": "My first document",
-    "content": "This is some text",
-    "timestamp": "2026-02-18"
-}
-
-# Index the document into "my-index"
-res = es.index(index="my-index", document=doc)
+PDF_FOLDER = os.path.join(os.path.dirname(__file__), "pdfs")
+os.makedirs(PDF_FOLDER, exist_ok=True)
 
 
 def get_year_from_url(url: str) -> str:
-    """
-    Extract year from the @YYYY-MM-DD part of a Kenya Law act/regulation URL.
-    Returns None if no match is found.
-    """
     match = re.search(r"@(\d{4})-\d{2}-\d{2}$", url)
     return match.group(1) if match else None
 
+def download_pdf(pdf_url: str, filename: str):
 
-async def crawl_acts_urls():
+    try:
+        response = requests.get(pdf_url, stream=True)
+        response.raise_for_status()
+
+        file_path = os.path.join(PDF_FOLDER, filename)
+        with open(file_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        print(f"Downloaded PDF: {file_path}")
+    except Exception as e:
+        print(f"Failed to download {pdf_url}: {e}")
+
+
+
+async def crawl_acts():
     async with async_playwright() as p:
 
         bills_browser = await p.chromium.launch(headless=True)
@@ -64,7 +66,7 @@ async def crawl_acts_urls():
                 "url": full_url,
                 "pdf_source": full_url + "/source",
                 "full_text": fulltext,
-                "full_text_length": len(fulltext),
+                "full_text_length": fulltext,
             }
 
 
@@ -72,10 +74,14 @@ async def crawl_acts_urls():
             print("")
             print("")
 
+            es.index(index="my-index", document=doc)
+
+            download_pdf(doc['pdf_source'], f"{doc['title'].replace(' ', '_')}.pdf")
+
+
             await detail_page.close()
 
         await bills_browser.close()
 
-# asyncio.run(crawl_bills_urls())
-asyncio.run(crawl_acts_urls())
+asyncio.run(crawl_acts())
 
