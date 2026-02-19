@@ -1,12 +1,10 @@
-import asyncio
-from datetime import datetime
 import re
-import requests
 import os
+import asyncio
+import requests
 from elasticsearch import Elasticsearch
 from playwright.async_api import async_playwright
 es = Elasticsearch("http://localhost:9200")
-
 
 PDF_FOLDER = os.path.join(os.path.dirname(__file__), "pdfs")
 os.makedirs(PDF_FOLDER, exist_ok=True)
@@ -68,11 +66,6 @@ async def crawl_acts():
                 "full_text": fulltext,
                 "full_text_length": fulltext,
             }
-
-
-            print(doc)
-            print("")
-            print("")
 
             es.index(index="my-index", document=doc)
 
